@@ -130,10 +130,22 @@ class Post(db.Model):
         self._render_text = self.content.replace('\n', '<br>')
         return render_str("post.html", p = self)
 
+    @classmethod
+    def register(cls, subject, content, created, last_modified):
+
+        return Post(parent = users_key(),
+                    subject = subject,
+                    pw_hash = content,
+                    created = created,
+                    last_modified=last_modified)
+
 class BlogFront(BlogHandler):
     def get(self):
         posts = greetings = Post.all().order('-created')
         self.render('front.html', posts = posts)
+
+
+
 
 class PostPage(BlogHandler):
     def get(self, post_id):
@@ -163,24 +175,18 @@ class NewPost(BlogHandler):
         if subject and content:
             p = Post(parent = blog_key(), subject = subject, content = content)
             p.put()
+            print "!!!!!!!!!!!"
+            print p.put()
+            print p.key()
+            print p.key().id()
+            print "!!!!!!!!!!!!"
             self.redirect('/blog/%s' % str(p.key().id()))
         else:
             error = "subject and content, please!"
             self.render("newpost.html", subject=subject, content=content, error=error)
 
 
-###### Unit 2 HW's
-class Rot13(BlogHandler):
-    def get(self):
-        self.render('rot13-form.html')
 
-    def post(self):
-        rot13 = ''
-        text = self.request.get('text')
-        if text:
-            rot13 = text.encode('rot13')
-
-        self.render('rot13-form.html', text = rot13)
 
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -225,7 +231,7 @@ class Signup(BlogHandler):
             have_error = True
 
         if have_error:
-            self.render('signup-form.html', **params)
+            self.render('signup-form.html',**params)
         else:
             self.done()
 
@@ -271,6 +277,37 @@ class Logout(BlogHandler):
         self.logout()
         self.redirect('/blog')
 
+
+
+
+
+class EditPage(BlogHandler):
+    def get(self):
+
+        p=db.Query(Post).filter("parent =","blog_key()")
+        print "jibnobnubn"
+        print p
+        print "bmknbiorsoi"
+
+        self.render('edit-post.html',content=p)
+
+    def post(self):
+        if subject and content:
+            p = Post(parent = blog_key(), subject = subject, content = content)
+            p.put()
+            print "!!!!!!!!!!!"
+            print p.put()
+            print p.key()
+            print p.key().id()
+            print "!!!!!!!!!!!!"
+            self.redirect('/blog/%s' % str(p.key().id()))
+        else:
+            error = "subject and content, please!"
+            self.render("edit-post.html", subject=subject, content=content, error=error)
+
+
+
+
 class Unit3Welcome(BlogHandler):
     def get(self):
         if self.user:
@@ -287,7 +324,6 @@ class Welcome(BlogHandler):
             self.redirect('/unit2/signup')
 
 app = webapp2.WSGIApplication([('/', MainPage),
-                               ('/unit2/rot13', Rot13),
                                ('/unit2/signup', Unit2Signup),
                                ('/unit2/welcome', Welcome),
                                ('/blog/?', BlogFront),
@@ -297,5 +333,5 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/login', Login),
                                ('/logout', Logout),
                                ('/unit3/welcome', Unit3Welcome),
-                               ],
+                               ('/blog/edit',EditPage)],
                               debug=True)
